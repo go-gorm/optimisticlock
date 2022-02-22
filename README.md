@@ -1,5 +1,8 @@
 # optimisticlock
-gorm-optimisticlock is optimistic lock plugin for gorm. 
+gorm-optimisticlock is optimistic lock plugin for gorm.
+
+## require
+- gorm ≤ v1.22.4
 
 ```go
 import "github.com/whoisix/gorm-optimisticlock"
