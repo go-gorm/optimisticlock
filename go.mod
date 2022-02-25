@@ -1,4 +1,4 @@
-module github.com/whoisix/gorm-optimisticlock
+module gorm.io/plugin/optimisticlock
 
 go 1.17
 

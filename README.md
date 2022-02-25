@@ -1,10 +1,10 @@
 # optimisticlock
-gorm-optimisticlock is optimistic lock plugin for gorm.
+optimisticlock is optimistic lock plugin for gorm.
 
 ## require
 
 ```go
-import "github.com/whoisix/gorm-optimisticlock"
+import "gorm.io/plugin/optimisticlock"
 
 type User struct {
     ID      int
