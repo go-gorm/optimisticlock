@@ -1,6 +1,7 @@
 package optimisticlock
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func TestVersion(t *testing.T) {
 
 	sql = DB.Session(&gorm.Session{DryRun: true}).Model(&user).Updates(&User{
 		Age:     19,
-		Version: Version{Int64: 1},
+		Version: Version{Int64: 10000000},
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
 
@@ -75,4 +76,13 @@ func TestVersion(t *testing.T) {
 		"version": 1,
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
+
+	b, err := json.Marshal(user)
+	require.Nil(t, err)
+	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":5}`, string(b))
+
+	user.Version.Valid = false
+	b, err = json.Marshal(user)
+	require.Nil(t, err)
+	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":null}`, string(b))
 }

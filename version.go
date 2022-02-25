@@ -37,7 +37,7 @@ func (v *Version) UnmarshalJSON(bytes []byte) error {
 	return err
 }
 
-func (v *Version) MarshalJSON() ([]byte, error) {
+func (v Version) MarshalJSON() ([]byte, error) {
 	if v.Valid {
 		return json.Marshal(v.Int64)
 	}
