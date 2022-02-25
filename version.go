@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -39,9 +40,9 @@ func (v *Version) UnmarshalJSON(bytes []byte) error {
 
 func (v Version) MarshalJSON() ([]byte, error) {
 	if v.Valid {
-		return json.Marshal(v.Int64)
+		return []byte(strconv.FormatInt(v.Int64, 10)), nil
 	}
-	return json.Marshal(nil)
+	return []byte("null"), nil
 }
 
 func (v *Version) CreateClauses(field *schema.Field) []clause.Interface {
