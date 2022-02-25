@@ -64,7 +64,7 @@ func (v VersionCreateClause) MergeClause(*clause.Clause) {
 
 func (v VersionCreateClause) ModifyStatement(stmt *gorm.Statement) {
 	var value int64 = 1
-	if val, zero := v.Field.ValueOf(stmt.ReflectValue); !zero {
+	if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
 		if version, ok := val.(Version); ok {
 			value = version.Int64
 		}
@@ -105,7 +105,7 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 			}
 		}
 
-		if val, zero := v.Field.ValueOf(stmt.ReflectValue); !zero {
+		if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
 			if version, ok := val.(Version); ok {
 				stmt.AddClause(clause.Where{Exprs: []clause.Expression{
 					clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: v.Field.DBName}, Value: version.Int64},
