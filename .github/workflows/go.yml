@@ -1,7 +1,7 @@
 name: go
 on: [push]
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Get latest go version
