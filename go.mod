@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/stretchr/testify v1.7.0
 	gorm.io/driver/sqlite v1.2.6
-	gorm.io/gorm v1.23.2-0.20220225024823-6a18a15c93e1
+	gorm.io/gorm v1.23.2
 )
 
 require (
