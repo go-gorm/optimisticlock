@@ -96,12 +96,15 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		if c, ok := stmt.Clauses["WHERE"]; ok {
 			if where, ok := c.Expression.(clause.Where); ok && len(where.Exprs) > 1 {
 				for _, expr := range where.Exprs {
-					if orCond, ok := expr.(clause.OrConditions); ok && len(orCond.Exprs) == 1 {
-						where.Exprs = []clause.Expression{clause.And(where.Exprs...)}
-						c.Expression = where
-						stmt.Clauses["WHERE"] = c
-						break
+					orCond, ok := expr.(clause.OrConditions)
+					if !ok || len(orCond.Exprs) != 1 {
+						continue
 					}
+
+					where.Exprs = []clause.Expression{clause.And(where.Exprs...)}
+					c.Expression = where
+					stmt.Clauses["WHERE"] = c
+					break
 				}
 			}
 		}
