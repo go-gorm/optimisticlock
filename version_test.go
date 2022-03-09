@@ -131,7 +131,7 @@ func (e Ext) Value() (driver.Value, error) {
 	return bs, nil
 }
 
-func TestIssues(t *testing.T) {
+func TestEmbed(t *testing.T) {
 	DB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	DB = DB.Debug()
 	require.Nil(t, err)
@@ -156,6 +156,14 @@ func TestIssues(t *testing.T) {
 	a.Amount = 233
 	sql := DB.Session(&gorm.Session{DryRun: true}).Updates(&account).Statement.SQL.String()
 	require.Equal(t, "UPDATE `accounts` SET `amount`=?,`created_at`=?,`ext`=?,`id`=?,`updated_at`=?,`user_id`=?,`version`=`version`+1 WHERE `accounts`.`deleted_at` IS NULL AND `accounts`.`version` = ? AND `id` = ?", sql)
-	err = DB.Updates(&account).Error
+	err = DB.Updates(&a).Error
 	require.Nil(t, err)
+
+	rows := DB.Updates(&a).RowsAffected
+	require.Equal(t, int64(0), rows)
+	require.Nil(t, DB.First(&a).Error)
+
+	a.Amount = 9999
+	rows = DB.Updates(&a).RowsAffected
+	require.Equal(t, int64(1), rows)
 }
