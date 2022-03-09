@@ -122,11 +122,37 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		if dv.Kind() == reflect.Struct {
 			d := make(map[string]interface{})
 			for i := 0; i < dv.NumField(); i++ {
-				if dv.Field(i).IsZero() || dv.Type().Field(i).Name == v.Field.Name {
+				field := dv.Type().Field(i)
+				if dv.Field(i).IsZero() || field.Name == v.Field.Name {
 					continue
 				}
 
-				d[dv.Type().Field(i).Name] = dv.Field(i).Interface()
+				fv := reflect.ValueOf(dv.Field(i).Interface())
+				if fv.Kind() != reflect.Struct {
+					d[field.Name] = dv.Field(i).Interface()
+					continue
+				}
+
+				// expand nested struct
+				if field.Anonymous {
+					for j := 0; j < fv.NumField(); j++ {
+						if fv.Field(j).IsZero() {
+							continue
+						}
+
+						d[fv.Type().Field(j).Name] = fv.Field(j).Interface()
+					}
+				}
+
+				// implementation driver.Valuer interface
+				valuer, ok := fv.Interface().(driver.Valuer)
+				if !ok {
+					continue
+				}
+
+				if value, err := valuer.Value(); err == nil {
+					d[field.Name] = value
+				}
 			}
 
 			stmt.Dest = d
