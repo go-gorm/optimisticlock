@@ -1,7 +1,9 @@
 package optimisticlock
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -85,4 +87,75 @@ func TestVersion(t *testing.T) {
 	b, err = json.Marshal(user)
 	require.Nil(t, err)
 	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":null}`, string(b))
+}
+
+type Ext struct {
+	CreditCard []string
+}
+
+type Account struct {
+	gorm.Model
+
+	UserID uint
+	User   *User
+
+	Amount int `gorm:"type:decimal(20,2)"`
+	Ext    Ext `json:"ext"  gorm:"column:ext"`
+
+	Version Version `gorm:"default:0"`
+}
+
+func (e *Ext) Scan(value interface{}) error {
+	bs, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("expected []byte, got %T", bs)
+	}
+
+	if len(bs) == 0 {
+		return nil
+	}
+
+	if err := json.Unmarshal(bs, e); nil != err {
+		return err
+	}
+
+	return nil
+}
+
+func (e Ext) Value() (driver.Value, error) {
+	bs, err := json.Marshal(e)
+	if nil != err {
+		return nil, fmt.Errorf("json Marshal err: %w", err)
+	}
+
+	return bs, nil
+}
+
+func TestIssues(t *testing.T) {
+	DB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	DB = DB.Debug()
+	require.Nil(t, err)
+
+	user := User{Name: "bob", Age: 20}
+	_ = DB.Migrator().DropTable(&User{})
+	_ = DB.AutoMigrate(&User{})
+	DB.Save(&user)
+
+	account := Account{
+		UserID: 1,
+		Amount: 1000,
+		Ext:    Ext{CreditCard: []string{"123456", "456123"}},
+	}
+	_ = DB.Migrator().DropTable(&Account{})
+	_ = DB.AutoMigrate(&Account{})
+	DB.Save(&account)
+
+	var a Account
+	DB.First(&a)
+
+	a.Amount = 233
+	sql := DB.Session(&gorm.Session{DryRun: true}).Updates(&account).Statement.SQL.String()
+	require.Equal(t, "UPDATE `accounts` SET `amount`=?,`created_at`=?,`ext`=?,`id`=?,`updated_at`=?,`user_id`=?,`version`=`version`+1 WHERE `accounts`.`deleted_at` IS NULL AND `accounts`.`version` = ? AND `id` = ?", sql)
+	err = DB.Updates(&account).Error
+	require.Nil(t, err)
 }
