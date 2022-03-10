@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -92,15 +93,14 @@ func (v VersionUpdateClause) MergeClause(*clause.Clause) {
 }
 
 func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
-	if _, ok := stmt.Clauses["version_enabled"]; !ok {
-		if c, ok := stmt.Clauses["WHERE"]; ok {
-			if where, ok := c.Expression.(clause.Where); ok && len(where.Exprs) > 1 {
-				for _, expr := range where.Exprs {
-					orCond, ok := expr.(clause.OrConditions)
-					if !ok || len(orCond.Exprs) != 1 {
-						continue
-					}
+	if _, ok := stmt.Clauses["version_enabled"]; ok {
+		return
+	}
 
+	if c, ok := stmt.Clauses["WHERE"]; ok {
+		if where, ok := c.Expression.(clause.Where); ok && len(where.Exprs) > 1 {
+			for _, expr := range where.Exprs {
+				if orCond, ok := expr.(clause.OrConditions); ok && len(orCond.Exprs) == 1 {
 					where.Exprs = []clause.Expression{clause.And(where.Exprs...)}
 					c.Expression = where
 					stmt.Clauses["WHERE"] = c
@@ -108,60 +108,34 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 				}
 			}
 		}
-
-		if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
-			if version, ok := val.(Version); ok {
-				stmt.AddClause(clause.Where{Exprs: []clause.Expression{
-					clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: v.Field.DBName}, Value: version.Int64},
-				}})
-			}
-		}
-
-		// struct to map
-		dv := reflect.ValueOf(stmt.Dest)
-		if dv.Kind() == reflect.Ptr {
-			dv = dv.Elem()
-		}
-		if dv.Kind() == reflect.Struct {
-			d := make(map[string]interface{})
-			for i := 0; i < dv.NumField(); i++ {
-				field := dv.Type().Field(i)
-				if dv.Field(i).IsZero() || field.Name == v.Field.Name {
-					continue
-				}
-
-				fv := reflect.ValueOf(dv.Field(i).Interface())
-				if fv.Kind() != reflect.Struct {
-					d[field.Name] = dv.Field(i).Interface()
-					continue
-				}
-
-				// expand nested struct
-				if field.Anonymous {
-					for j := 0; j < fv.NumField(); j++ {
-						if fv.Field(j).IsZero() {
-							continue
-						}
-
-						d[fv.Type().Field(j).Name] = fv.Field(j).Interface()
-					}
-				}
-
-				// implementation driver.Valuer interface
-				valuer, ok := fv.Interface().(driver.Valuer)
-				if !ok {
-					continue
-				}
-
-				if value, err := valuer.Value(); err == nil {
-					d[field.Name] = value
-				}
-			}
-
-			stmt.Dest = d
-		}
-
-		stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: fmt.Sprintf("`%s`+1", v.Field.DBName)}, true)
-		stmt.Clauses["version_enabled"] = clause.Clause{}
 	}
+
+	if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
+		if version, ok := val.(Version); ok {
+			stmt.AddClause(clause.Where{Exprs: []clause.Expression{
+				clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: v.Field.DBName}, Value: version.Int64},
+			}})
+		}
+	}
+
+	// struct to map
+	dv := reflect.ValueOf(stmt.Dest)
+	if reflect.Indirect(dv).Kind() == reflect.Struct {
+		sd, _ := schema.Parse(stmt.Dest, &sync.Map{}, stmt.DB.NamingStrategy)
+		d := make(map[string]interface{})
+		for _, field := range sd.Fields {
+			if field.DBName == v.Field.DBName {
+				continue
+			}
+
+			if val, zero := field.ValueOf(stmt.Context, dv); !zero {
+				d[field.DBName] = val
+			}
+		}
+
+		stmt.Dest = d
+	}
+
+	stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: fmt.Sprintf("`%s`+1", v.Field.DBName)}, true)
+	stmt.Clauses["version_enabled"] = clause.Clause{}
 }
