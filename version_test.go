@@ -175,4 +175,5 @@ func TestEmbed(t *testing.T) {
 	require.Nil(t, DB.First(&a1).Error)
 	require.Equal(t, a.Amount, a1.Amount)
 	require.Equal(t, int64(2), a.Version.Int64)
+	require.Equal(t, int64(3), a1.Version.Int64)
 }
