@@ -41,7 +41,7 @@ func (v *Version) UnmarshalJSON(bytes []byte) error {
 
 func (v Version) MarshalJSON() ([]byte, error) {
 	if v.Valid {
-		return []byte(strconv.FormatInt(v.Int64, 10)), nil
+		return strconv.AppendInt(nil, v.Int64, 10), nil
 	}
 	return []byte("null"), nil
 }
