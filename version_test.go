@@ -179,6 +179,7 @@ func TestEmbed(t *testing.T) {
 	require.Equal(t, int64(3), a1.Version.Int64)
 }
 
+// docker run --name gormpostgresql -e POSTGRES_PASSWORD=gorm -e POSTGRES_USER=gorm -d -p 5432:5432 postgres
 func TestPostgres(t *testing.T) {
 	dsn := "host=127.0.0.1 user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
