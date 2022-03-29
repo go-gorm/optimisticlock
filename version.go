@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strconv"
 	"sync"
@@ -136,6 +135,6 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		stmt.Dest = d
 	}
 
-	stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: fmt.Sprintf("%s+1", stmt.Quote(v.Field.DBName))}, true)
+	stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: stmt.Quote(v.Field.DBName) + "+1"}, true)
 	stmt.Clauses["version_enabled"] = clause.Clause{}
 }
