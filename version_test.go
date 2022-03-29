@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -176,4 +177,25 @@ func TestEmbed(t *testing.T) {
 	require.Equal(t, a.Amount, a1.Amount)
 	require.Equal(t, int64(2), a.Version.Int64)
 	require.Equal(t, int64(3), a1.Version.Int64)
+}
+
+func TestPostgres(t *testing.T) {
+	dsn := "host=127.0.0.1 user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB = DB.Debug()
+	require.Nil(t, err)
+
+	user := User{Name: "bob", Age: 20}
+	_ = DB.Migrator().DropTable(&User{})
+	_ = DB.AutoMigrate(&User{})
+	DB.Save(&user)
+	require.Equal(t, "bob", user.Name)
+	require.Equal(t, uint(20), user.Age)
+	require.Equal(t, int64(1), user.Version.Int64)
+
+	rows := DB.Model(&user).Update("age", 18).RowsAffected
+	require.Equal(t, int64(1), rows)
+	require.Nil(t, DB.First(&user).Error)
+	require.Equal(t, int64(2), user.Version.Int64)
+	require.Equal(t, uint(18), user.Age)
 }
