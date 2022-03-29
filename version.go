@@ -136,6 +136,6 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		stmt.Dest = d
 	}
 
-	stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: fmt.Sprintf("`%s`+1", v.Field.DBName)}, true)
+	stmt.SetColumn(v.Field.DBName, clause.Expr{SQL: fmt.Sprintf("%s+1", stmt.Quote(v.Field.DBName))}, true)
 	stmt.Clauses["version_enabled"] = clause.Clause{}
 }
