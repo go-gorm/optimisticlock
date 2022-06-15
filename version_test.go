@@ -89,6 +89,16 @@ func TestVersion(t *testing.T) {
 	b, err = json.Marshal(user)
 	require.Nil(t, err)
 	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":null}`, string(b))
+
+	// support create
+	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}
+	DB.Create(&users)
+	require.Equal(t, "foo", users[0].Name)
+	require.Equal(t, uint(30), users[0].Age)
+	require.Equal(t, int64(1), users[0].Version.Int64)
+	require.Equal(t, "bar", users[1].Name)
+	require.Equal(t, uint(40), users[1].Age)
+	require.Equal(t, int64(100), users[1].Version.Int64)
 }
 
 type Ext struct {
