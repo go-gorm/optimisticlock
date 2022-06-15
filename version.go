@@ -67,14 +67,14 @@ func (v VersionCreateClause) ModifyStatement(stmt *gorm.Statement) {
 	switch stmt.ReflectValue.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < stmt.ReflectValue.Len(); i++ {
-			v.setVersionCloumn(stmt, stmt.ReflectValue.Index(i))
+			v.setVersionColumn(stmt, stmt.ReflectValue.Index(i))
 		}
 	case reflect.Struct:
-		v.setVersionCloumn(stmt, stmt.ReflectValue)
+		v.setVersionColumn(stmt, stmt.ReflectValue)
 	}
 }
 
-func (v VersionCreateClause) setVersionCloumn(stmt *gorm.Statement, reflectValue reflect.Value) {
+func (v VersionCreateClause) setVersionColumn(stmt *gorm.Statement, reflectValue reflect.Value) {
 	var value int64 = 1
 	if val, zero := v.Field.ValueOf(stmt.Context, reflectValue); !zero {
 		if version, ok := val.(Version); ok {
