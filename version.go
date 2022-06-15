@@ -64,13 +64,24 @@ func (v VersionCreateClause) MergeClause(*clause.Clause) {
 }
 
 func (v VersionCreateClause) ModifyStatement(stmt *gorm.Statement) {
+	switch stmt.ReflectValue.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < stmt.ReflectValue.Len(); i++ {
+			v.setVersionColumn(stmt, stmt.ReflectValue.Index(i))
+		}
+	case reflect.Struct:
+		v.setVersionColumn(stmt, stmt.ReflectValue)
+	}
+}
+
+func (v VersionCreateClause) setVersionColumn(stmt *gorm.Statement, reflectValue reflect.Value) {
 	var value int64 = 1
-	if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
+	if val, zero := v.Field.ValueOf(stmt.Context, reflectValue); !zero {
 		if version, ok := val.(Version); ok {
 			value = version.Int64
 		}
 	}
-	stmt.SetColumn(v.Field.DBName, value)
+	v.Field.Set(stmt.Context, reflectValue, value)
 }
 
 func (v *Version) UpdateClauses(field *schema.Field) []clause.Interface {
