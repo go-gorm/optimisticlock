@@ -12,6 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	mysqlDSN     = "gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local"
+	postgresDSN  = "user=gorm password=gorm dbname=gorm host=localhost port=9920 sslmode=disable TimeZone=Asia/Shanghai"
+	sqlserverDSN = "sqlserver://gorm:LoremIpsum86@localhost:9930?database=gorm"
+)
+
 type User struct {
 	ID      int
 	Name    string
@@ -21,7 +27,6 @@ type User struct {
 
 func TestVersion(t *testing.T) {
 	DB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	DB = DB.Debug()
 	require.Nil(t, err)
 
 	user := User{Name: "bob", Age: 20}
@@ -52,11 +57,12 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, int64(4), user.Version.Int64)
 	require.Equal(t, uint(12), user.Age)
 
-	rows = DB.Model(&user).Updates(&User{Name: "lewis"}).RowsAffected
+	rows = DB.Model(&user).Select("name", "age", "version").Updates(&User{Name: "lewis"}).RowsAffected
 	require.Equal(t, int64(1), rows)
 	require.Nil(t, DB.First(&user).Error)
 	require.Equal(t, int64(5), user.Version.Int64)
 	require.Equal(t, "lewis", user.Name)
+	require.Equal(t, uint(0), user.Age)
 
 	rows = DB.Model(&user).Updates(map[string]interface{}{
 		"age": 18,
@@ -145,7 +151,6 @@ func (e Ext) Value() (driver.Value, error) {
 
 func TestEmbed(t *testing.T) {
 	DB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	DB = DB.Debug()
 	require.Nil(t, err)
 
 	user := User{Name: "bob", Age: 20}
@@ -189,11 +194,9 @@ func TestEmbed(t *testing.T) {
 	require.Equal(t, int64(3), a1.Version.Int64)
 }
 
-// docker run --name gormpostgresql -e POSTGRES_PASSWORD=gorm -e POSTGRES_USER=gorm -d -p 5432:5432 postgres
+// use gorm.io/gorm/tests docker compose file
 func TestPostgres(t *testing.T) {
-	dsn := "host=127.0.0.1 user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
-	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	DB = DB.Debug()
+	DB, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
 	require.Nil(t, err)
 
 	user := User{Name: "bob", Age: 20}

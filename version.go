@@ -131,6 +131,8 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 	// struct to map
 	dv := reflect.ValueOf(stmt.Dest)
 	if reflect.Indirect(dv).Kind() == reflect.Struct {
+		selectColumns, restricted := stmt.SelectAndOmitColumns(false, true)
+
 		sd, _ := schema.Parse(stmt.Dest, &sync.Map{}, stmt.DB.NamingStrategy)
 		d := make(map[string]interface{})
 		for _, field := range sd.Fields {
@@ -138,8 +140,11 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 				continue
 			}
 
-			if val, zero := field.ValueOf(stmt.Context, dv); !zero {
-				d[field.DBName] = val
+			if v, ok := selectColumns[field.DBName]; (ok && v) || (!ok && (!restricted || (!stmt.SkipHooks && field.AutoUpdateTime > 0))) {
+				val, isZero := field.ValueOf(stmt.Context, dv)
+				if (ok || !isZero) && field.Updatable {
+					d[field.DBName] = val
+				}
 			}
 		}
 

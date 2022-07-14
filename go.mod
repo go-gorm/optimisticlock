@@ -6,7 +6,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	gorm.io/driver/postgres v1.3.1
 	gorm.io/driver/sqlite v1.2.6
-	gorm.io/gorm v1.23.2
+	gorm.io/gorm v1.23.8
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/jackc/pgtype v1.9.1 // indirect
 	github.com/jackc/pgx/v4 v4.14.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
