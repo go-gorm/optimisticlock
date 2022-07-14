@@ -14,6 +14,7 @@ jobs:
           POSTGRES_USER: gorm
           POSTGRES_PASSWORD: gorm
           POSTGRES_PORT: 5432
+          TZ: Asia/Shanghai
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -22,7 +23,7 @@ jobs:
           --health-retries 5
         ports:
           # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+          - 9920:5432
     steps:
       - name: Get latest go version
         id: version
