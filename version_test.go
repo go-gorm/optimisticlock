@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -19,7 +20,8 @@ var (
 )
 
 type User struct {
-	ID      int
+	gorm.Model
+
 	Name    string
 	Age     uint
 	Version Version
@@ -37,11 +39,17 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, uint(20), user.Age)
 	require.Equal(t, int64(1), user.Version.Int64)
 
+	date := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+	DB.NowFunc = func() time.Time {
+		return date
+	}
 	rows := DB.Model(&user).Update("age", 18).RowsAffected
 	require.Equal(t, int64(1), rows)
 	require.Nil(t, DB.First(&user).Error)
 	require.Equal(t, int64(2), user.Version.Int64)
 	require.Equal(t, uint(18), user.Age)
+	require.Equal(t, date, user.UpdatedAt)
+	DB.NowFunc = time.Now().Local
 
 	rows = DB.Model(&user).Update("age", 16).RowsAffected
 	require.Equal(t, int64(1), rows)
@@ -50,7 +58,8 @@ func TestVersion(t *testing.T) {
 	rows = DB.Model(&user).Update("age", 14).RowsAffected
 	require.Equal(t, int64(0), rows)
 
-	// not version
+	// No version restriction and updated_at will not be updated
+	// UpdateColumn will skip hooks
 	rows = DB.Model(&User{}).Where("id = 1").UpdateColumn("age", 12).RowsAffected
 	require.Equal(t, int64(1), rows)
 	require.Nil(t, DB.First(&user).Error)
@@ -87,15 +96,6 @@ func TestVersion(t *testing.T) {
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
 
-	b, err := json.Marshal(user)
-	require.Nil(t, err)
-	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":6}`, string(b))
-
-	user.Version.Valid = false
-	b, err = json.Marshal(user)
-	require.Nil(t, err)
-	require.Equal(t, `{"ID":1,"Name":"lewis","Age":18,"Version":null}`, string(b))
-
 	// support create
 	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}
 	DB.Create(&users)
@@ -105,6 +105,25 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, "bar", users[1].Name)
 	require.Equal(t, uint(40), users[1].Age)
 	require.Equal(t, int64(100), users[1].Version.Int64)
+}
+
+func TestJsonMarshal(t *testing.T) {
+	user := User{
+		Model: gorm.Model{
+			ID: 1,
+		},
+		Name:    "lewis",
+		Age:     18,
+		Version: Version{Int64: 12, Valid: true},
+	}
+	b, err := json.Marshal(user)
+	require.Nil(t, err)
+	require.Equal(t, `{"ID":1,"CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","DeletedAt":null,"Name":"lewis","Age":18,"Version":12}`, string(b))
+
+	user.Version.Valid = false
+	b, err = json.Marshal(user)
+	require.Nil(t, err)
+	require.Equal(t, `{"ID":1,"CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","DeletedAt":null,"Name":"lewis","Age":18,"Version":null}`, string(b))
 }
 
 type Ext struct {
