@@ -128,7 +128,7 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		}
 	}
 
-	// struct to map
+	// struct to map. version column is int64, but need set its value to string
 	dv := reflect.ValueOf(stmt.Dest)
 	if reflect.Indirect(dv).Kind() == reflect.Struct {
 		selectColumns, restricted := stmt.SelectAndOmitColumns(false, true)
