@@ -58,9 +58,7 @@ func TestVersion(t *testing.T) {
 	rows = DB.Model(&user).Update("age", 14).RowsAffected
 	require.Equal(t, int64(0), rows)
 
-	// No version restriction and updated_at will not be updated
-	// UpdateColumn will skip hooks
-	rows = DB.Model(&User{}).Where("id = 1").UpdateColumn("age", 12).RowsAffected
+	rows = DB.Model(&User{}).Where("id = 1").Update("age", 12).RowsAffected
 	require.Equal(t, int64(1), rows)
 	require.Nil(t, DB.First(&user).Error)
 	require.Equal(t, int64(4), user.Version.Int64)
@@ -90,11 +88,17 @@ func TestVersion(t *testing.T) {
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
 
-	sql = DB.Session(&gorm.Session{DryRun: true}).Model(&user).Updates(map[string]interface{}{
-		"age":     18,
-		"version": 1,
+	sql = DB.Session(&gorm.Session{DryRun: true}).Model(&user).UpdateColumns(User{
+		Age: 18,
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
+	require.Contains(t, sql, "`version` = ?")
+
+	sql = DB.Session(&gorm.Session{DryRun: true}).Model(&user).UpdateColumns(map[string]interface{}{
+		"age": 18,
+	}).Statement.SQL.String()
+	require.Contains(t, sql, "`version`=`version`+1")
+	require.Contains(t, sql, "`version` = ?")
 
 	// support create
 	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}
