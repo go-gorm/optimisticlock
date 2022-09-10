@@ -49,7 +49,7 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, int64(2), user.Version.Int64)
 	require.Equal(t, uint(18), user.Age)
 	require.Equal(t, date, user.UpdatedAt)
-	DB.NowFunc = time.Now().Local
+	DB.NowFunc = time.Now
 
 	rows = DB.Model(&user).Update("age", 16).RowsAffected
 	require.Equal(t, int64(1), rows)
@@ -99,6 +99,15 @@ func TestVersion(t *testing.T) {
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
 	require.Contains(t, sql, "`version` = ?")
+
+	DB.NowFunc = func() time.Time {
+		return date
+	}
+	user.Name = "micky"
+	rows = DB.Updates(&user).RowsAffected
+	require.Equal(t, int64(1), rows)
+	require.Equal(t, date, user.UpdatedAt)
+	DB.NowFunc = time.Now().Local
 
 	// support create
 	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}

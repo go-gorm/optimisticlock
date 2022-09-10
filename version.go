@@ -140,7 +140,11 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 				continue
 			}
 
-			if v, ok := selectColumns[field.DBName]; (ok && v) || (!ok && (!restricted || (!stmt.SkipHooks && field.AutoUpdateTime > 0))) {
+			if v, ok := selectColumns[field.DBName]; (ok && v) || (!ok && (!restricted || !stmt.SkipHooks)) {
+				if field.AutoUpdateTime > 0 {
+					continue
+				}
+
 				val, isZero := field.ValueOf(stmt.Context, dv)
 				if (ok || !isZero) && field.Updatable {
 					d[field.DBName] = val
