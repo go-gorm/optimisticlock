@@ -107,7 +107,7 @@ func TestVersion(t *testing.T) {
 	rows = DB.Updates(&user).RowsAffected
 	require.Equal(t, int64(1), rows)
 	require.Equal(t, date, user.UpdatedAt)
-	DB.NowFunc = time.Now().Local
+	DB.NowFunc = time.Now
 
 	// support create
 	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}
@@ -200,7 +200,11 @@ func TestEmbed(t *testing.T) {
 	DB.Save(&account)
 
 	sql := DB.Session(&gorm.Session{DryRun: true}).Updates(&account).Statement.SQL.String()
-	require.Equal(t, "UPDATE `accounts` SET `amount`=?,`created_at`=?,`ext`=?,`id`=?,`updated_at`=?,`user_id`=?,`version`=`version`+1 WHERE `accounts`.`deleted_at` IS NULL AND `accounts`.`version` = ? AND `id` = ?", sql)
+	require.Contains(t, sql, "`updated_at`=?")
+	require.Contains(t, sql, "`version`=`version`+1")
+	require.Contains(t, sql, "`user_id`=?")
+	require.Contains(t, sql, "`ext`=?")
+	require.Contains(t, sql, "`amount`=?")
 
 	var a Account
 	DB.First(&a)
