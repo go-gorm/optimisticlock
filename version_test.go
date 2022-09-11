@@ -92,13 +92,11 @@ func TestVersion(t *testing.T) {
 		Age: 18,
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
-	require.Contains(t, sql, "`version` = ?")
 
 	sql = DB.Session(&gorm.Session{DryRun: true}).Model(&user).UpdateColumns(map[string]interface{}{
 		"age": 18,
 	}).Statement.SQL.String()
 	require.Contains(t, sql, "`version`=`version`+1")
-	require.Contains(t, sql, "`version` = ?")
 
 	DB.NowFunc = func() time.Time {
 		return date

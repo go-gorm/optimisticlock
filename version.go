@@ -120,11 +120,16 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		}
 	}
 
-	if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
-		if version, ok := val.(Version); ok {
-			stmt.AddClause(clause.Where{Exprs: []clause.Expression{
-				clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: v.Field.DBName}, Value: version.Int64},
-			}})
+	if !stmt.SkipHooks {
+		if val, zero := v.Field.ValueOf(stmt.Context, stmt.ReflectValue); !zero {
+			if version, ok := val.(Version); ok {
+				stmt.AddClause(clause.Where{Exprs: []clause.Expression{
+					clause.Eq{
+						Column: clause.Column{Table: clause.CurrentTable, Name: v.Field.DBName},
+						Value:  version.Int64,
+					},
+				}})
+			}
 		}
 	}
 
