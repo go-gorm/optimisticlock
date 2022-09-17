@@ -118,6 +118,12 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, "bar", users[1].Name)
 	require.Equal(t, uint(40), users[1].Age)
 	require.Equal(t, int64(100), users[1].Version.Int64)
+
+	// unscoped
+	user.Name = "foo"
+	r := DB.Unscoped().Updates(&user)
+	require.Equal(t, int64(1), r.RowsAffected)
+	require.Contains(t, sql, "`version`=`version`+1")
 }
 
 func TestJsonMarshal(t *testing.T) {
