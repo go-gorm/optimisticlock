@@ -23,11 +23,11 @@ DB.Model(&user).Update("age", 18)
 DB.Unscoped().Model(&user).Update("age", 18)
 // UPDATE `users` SET `age`=18,`version`=`version`+1 WHERE `id` = 1
 
-// Ignores the Version value passed to the structure
+// The Model's Version value passed in to Updates will be ignored
 DB.Model(&user).Updates(&User{Age: 18, Version: optimisticlock.Version{Int64: 1}})
 // UPDATE `users` SET `age`=18,`version`=`version`+1 WHERE `users`.`version` = 3 AND `id` = 1
 
-// Model's version is zero, no condition are added to WHERE
+// Model's Version is zero, then no condition will be added to the WHERE
 DB.Model(&User{}).Where("id = 1").Update("age", 12)
 // UPDATE `users` SET `age`=12,`version`=`version`+1 WHERE id = 1
 ```
