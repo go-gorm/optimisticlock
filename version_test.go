@@ -21,7 +21,7 @@ var (
 
 type User struct {
 	gorm.Model
-
+	ID      string `gorm:"primarykey"`
 	Name    string
 	Age     uint
 	Version Version
@@ -244,6 +244,45 @@ func TestPostgres(t *testing.T) {
 	user := User{Name: "bob", Age: 20}
 	_ = DB.Migrator().DropTable(&User{})
 	_ = DB.AutoMigrate(&User{})
+	DB.Save(&user)
+	require.Equal(t, "bob", user.Name)
+	require.Equal(t, uint(20), user.Age)
+	require.Equal(t, int64(1), user.Version.Int64)
+
+	rows := DB.Model(&user).Update("age", 18).RowsAffected
+	require.Equal(t, int64(1), rows)
+	require.Nil(t, DB.First(&user).Error)
+	require.Equal(t, int64(2), user.Version.Int64)
+	require.Equal(t, uint(18), user.Age)
+}
+
+
+func TestPostgres(t *testing.T) {
+	DB, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	require.Nil(t, err)
+	_ = DB.Migrator().DropTable(&User{})
+	_ = DB.AutoMigrate(&User{})
+
+	user := User{Name: "bob", Age: 20}
+	DB.Save(&user)
+	require.Equal(t, "bob", user.Name)
+	require.Equal(t, uint(20), user.Age)
+	require.Equal(t, int64(1), user.Version.Int64)
+
+	rows := DB.Model(&user).Update("age", 18).RowsAffected
+	require.Equal(t, int64(1), rows)
+	require.Nil(t, DB.First(&user).Error)
+	require.Equal(t, int64(2), user.Version.Int64)
+	require.Equal(t, uint(18), user.Age)
+}
+
+func TestPostgres_FailedCase(t *testing.T) {
+	DB, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	require.Nil(t, err)
+	_ = DB.Migrator().DropTable(&User{})
+	_ = DB.AutoMigrate(&User{})
+
+	user := User{Name: "bob", Age: 20, ID: "test"}
 	DB.Save(&user)
 	require.Equal(t, "bob", user.Name)
 	require.Equal(t, uint(20), user.Age)
