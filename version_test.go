@@ -237,7 +237,7 @@ func TestEmbed(t *testing.T) {
 }
 
 // use gorm.io/gorm/tests docker compose file
-func TestPostgres(t *testing.T) {
+func TestPostgres_(t *testing.T) {
 	DB, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
 	require.Nil(t, err)
 
