@@ -141,6 +141,9 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 			if field.DBName == v.Field.DBName {
 				continue
 			}
+			if field.DBName == "" {
+				continue
+			}
 
 			if v, ok := selectColumns[field.DBName]; (ok && v) || (!ok && (!restricted || !stmt.SkipHooks)) {
 				if field.AutoUpdateTime > 0 {
