@@ -198,12 +198,14 @@ func TestEmbed(t *testing.T) {
 
 	account := Account{
 		UserID: 1,
+		User:   &user,
 		Amount: 1000,
 		Ext:    Ext{CreditCard: []string{"123456", "456123"}},
 	}
 	_ = DB.Migrator().DropTable(&Account{})
 	_ = DB.AutoMigrate(&Account{})
-	DB.Save(&account)
+	require.Nil(t, DB.Save(&account).Error)
+	require.Nil(t, DB.Save(&account).Error)
 
 	sql := DB.Session(&gorm.Session{DryRun: true}).Updates(&account).Statement.SQL.String()
 	require.Contains(t, sql, "`updated_at`=?")
@@ -232,8 +234,8 @@ func TestEmbed(t *testing.T) {
 	var a1 Account
 	require.Nil(t, DB.First(&a1).Error)
 	require.Equal(t, a.Amount, a1.Amount)
-	require.Equal(t, int64(2), a.Version.Int64)
-	require.Equal(t, int64(3), a1.Version.Int64)
+	require.Equal(t, int64(3), a.Version.Int64)
+	require.Equal(t, int64(4), a1.Version.Int64)
 }
 
 // use gorm.io/gorm/tests docker compose file
