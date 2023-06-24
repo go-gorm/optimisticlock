@@ -130,7 +130,7 @@ func (v VersionUpdateClause) ModifyStatement(stmt *gorm.Statement) {
 		}
 	}
 
-	// struct to map[string]interface{}. version field is int64, but need set its value to string
+	// convert struct to map[string]interface{}, we need to handle the version field with string, but which is an int64.
 	dv := reflect.ValueOf(stmt.Dest)
 	if reflect.Indirect(dv).Kind() == reflect.Struct {
 		selectColumns, restricted := stmt.SelectAndOmitColumns(false, true)
