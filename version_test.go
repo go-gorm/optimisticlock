@@ -109,6 +109,12 @@ func TestVersion(t *testing.T) {
 	require.Equal(t, date, user.UpdatedAt)
 	DB.NowFunc = time.Now
 
+	// Call Select method. Otherwise, will return primary key duplicate error.
+	user.Name = "lucky"
+	tx := DB.Select("*").Save(&user)
+	require.Nil(t, tx.Error)
+	require.Equal(t, int64(0), tx.RowsAffected)
+
 	// support create
 	users := []User{{Name: "foo", Age: 30}, {Name: "bar", Age: 40, Version: Version{Int64: 100}}}
 	DB.Create(&users)
