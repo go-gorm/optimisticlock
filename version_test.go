@@ -11,6 +11,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -262,4 +263,51 @@ func TestPostgres(t *testing.T) {
 	require.Nil(t, DB.First(&user).Error)
 	require.Equal(t, int64(2), user.Version.Int64)
 	require.Equal(t, uint(18), user.Age)
+}
+
+func TestFullSaveAssociation(t *testing.T) {
+	DB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.Nil(t, err)
+
+	type Order struct {
+		ID      uint64
+		Amount  int64
+		Version Version
+	}
+	type User struct {
+		ID        uint64
+		FirstName string
+		LastName  string
+		Orders    []*Order `gorm:"many2many:user_orders"`
+		Version   Version
+	}
+
+	_ = DB.AutoMigrate(&User{}, &Order{})
+
+	u := User{
+		ID:        1000,
+		FirstName: "aaa",
+		LastName:  "bbb",
+		Orders: []*Order{
+			{
+				ID:     2000,
+				Amount: 5000,
+			},
+		},
+	}
+
+	require.Nil(t, DB.Save(&u).Error)
+
+	u.Orders[0].Amount = 6000
+	u.Orders[0].Version.Int64 = 1000
+	DB = DB.Session(&gorm.Session{
+		Logger:               DB.Logger.LogMode(logger.Info),
+		FullSaveAssociations: true,
+	})
+	DB.Table("users").Updates(&u)
+
+	var o Order
+	require.Nil(t, DB.First(&o).Error)
+	require.Equal(t, int64(6000), o.Amount)
+	require.Equal(t, int64(1000), o.Version.Int64)
 }
