@@ -34,5 +34,5 @@ DB.Model(&User{}).Where("id = 1").Update("age", 12)
 
 // When want to use GORM's Save method, need to call Select. Otherwise, will return primary key duplicate error.
 // The Select param is the fields that you want to update or "*".
-DB.Model(&user).Select("*").Updates(&User{Age: 18})
+DB.Model(&user).Select("*").Save(&User{Age: 18})
 ```
