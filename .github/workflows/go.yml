@@ -3,27 +3,6 @@ on: [push,pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Service containers to run with `container-job`
-    services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
-        env:
-          POSTGRES_USER: gorm
-          POSTGRES_PASSWORD: gorm
-          POSTGRES_PORT: 5432
-          TZ: Asia/Shanghai
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 9920:5432
     steps:
       - name: Get latest go version
         id: version
@@ -46,4 +25,5 @@ jobs:
             ${{ runner.os }}-go-
       - name: Get dependencies, run test
         run: |
+          cd tests
           go test ./...
