@@ -1,4 +1,4 @@
-package optimisticlock
+package tests
 
 import (
 	"database/sql/driver"
@@ -10,6 +10,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	. "gorm.io/plugin/optimisticlock"
 )
 
 type User struct {
